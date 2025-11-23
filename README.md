@@ -144,8 +144,8 @@ A GPS-based attendance tracking system for educational assistants with real-time
    ```
 
 3. **Access the System:**
-   - Admin Dashboard: http://localhost:8080/frontend/admin/
-   - Assistant PWA: http://localhost:8080/frontend/assistant/
+   - Admin Dashboard: http://localhost:5000/frontend/admin/
+   - Assistant PWA: http://localhost:5000/frontend/assistant/
 
 4. **Stop Application:**
    ```batch
