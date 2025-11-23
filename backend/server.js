@@ -3,16 +3,21 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
+// Unified logger
+const logger = require('./utils/logger');
+
+// Route imports
 const authRoutes = require('./routes/authRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const centerRoutes = require('./routes/centerRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const logRoutes = require('./routes/logRoutes'); // new log endpoint
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+/* ---------- Middleware ---------- */
 app.use(cors({
     origin: process.env.FRONTEND_URL || `http://localhost:${PORT}`,
     credentials: true
@@ -20,23 +25,24 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from frontend directory
+// Serve static files from the frontend directory
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Request logging middleware
+/* ---------- Request logging ---------- */
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    logger.info(`${new Date().toISOString()} - ${req.method} ${req.path}`);
     next();
 });
 
-// Routes
+/* ---------- Routes ---------- */
 app.use('/api/auth', authRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/centers', centerRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/log', logRoutes); // expose log endpoint
 
-// Health check endpoint
+/* ---------- Health check ---------- */
 app.get('/health', (req, res) => {
     res.json({
         success: true,
@@ -45,7 +51,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Root endpoint
+/* ---------- Root endpoint ---------- */
 app.get('/', (req, res) => {
     res.json({
         success: true,
@@ -56,12 +62,23 @@ app.get('/', (req, res) => {
             sessions: '/api/sessions',
             attendance: '/api/attendance',
             centers: '/api/centers',
-            admin: '/api/admin'
+            admin: '/api/admin',
+            log: '/api/log'
         }
     });
 });
 
-// 404 handler
+/* ---------- API root ---------- */
+app.get('/api', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Assistant Attendance System API',
+        version: '1.0.0',
+        documentation: 'Please use specific endpoints'
+    });
+});
+
+/* ---------- 404 handler ---------- */
 app.use((req, res) => {
     res.status(404).json({
         success: false,
@@ -69,7 +86,7 @@ app.use((req, res) => {
     });
 });
 
-// Error handler
+/* ---------- Error handler ---------- */
 app.use((err, req, res, next) => {
     console.error('Error:', err);
     res.status(500).json({
@@ -79,25 +96,42 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
-app.listen(PORT, () => {
+/* ---------- HTTPS / HTTP server ---------- */
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
+
+let server;
+let protocol = 'http';
+
+try {
+    if (fs.existsSync(path.join(__dirname, 'key.pem')) && fs.existsSync(path.join(__dirname, 'cert.pem'))) {
+        const sslOptions = {
+            key: fs.readFileSync(path.join(__dirname, 'key.pem')),
+            cert: fs.readFileSync(path.join(__dirname, 'cert.pem'))
+        };
+        server = https.createServer(sslOptions, app);
+        protocol = 'https';
+        console.log('🔒 HTTPS Enabled');
+    } else {
+        throw new Error('Certificates not found');
+    }
+} catch (e) {
+    console.log('⚠️  SSL Certificates not found or invalid, falling back to HTTP');
+    server = http.createServer(app);
+}
+
+server.listen(PORT, () => {
     console.log('═══════════════════════════════════════════════════════');
     console.log('  🎯 Assistant Attendance System');
     console.log('═══════════════════════════════════════════════════════');
-    console.log(`  ✅ Server running on port ${PORT}`);
+    console.log(`  ✅ Server running on port ${PORT} (${protocol.toUpperCase()})`);
     console.log('');
     console.log('  📱 ASSISTANT PWA:');
-    console.log(`     http://localhost:${PORT}/assistant/`);
+    console.log(`     ${protocol}://localhost:${PORT}/assistant/`);
     console.log('');
-    console.log('  🔐 ADMIN DASHBOARD:');
-    console.log(`     http://localhost:${PORT}/admin/`);
-    console.log('');
-    console.log('  🔧 API Endpoints:');
-    console.log(`     http://localhost:${PORT}/api`);
-    console.log('');
-    console.log(`  📋 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log('═══════════════════════════════════════════════════════');
-    console.log('  💡 Tip: Ctrl+Click the links above to open in browser');
+    console.log('  👨‍💼 ADMIN DASHBOARD:');
+    console.log(`     ${protocol}://localhost:${PORT}/admin/`);
     console.log('═══════════════════════════════════════════════════════');
 });
 

@@ -24,7 +24,6 @@
             </div>
             <h2>Admin Panel</h2>
         </div>
-
         <nav class="sidebar-nav">
             <a href="dashboard.html" class="nav-item">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -70,7 +69,6 @@
                 <span>Attendance</span>
             </a>
         </nav>
-
         <div class="sidebar-footer">
             <div class="user-info">
                 <div class="user-avatar" id="user-avatar">A</div>
@@ -111,7 +109,6 @@
                 <input type="text" id="search-input" class="form-input" placeholder="Search assistants..."
                     style="max-width: 300px;">
             </div>
-
             <div class="table-container">
                 <table class="data-table">
                     <thead>
@@ -146,25 +143,21 @@
             <div class="modal-body">
                 <form id="assistant-form">
                     <input type="hidden" id="assistant-id">
-
                     <div class="form-group">
                         <label class="form-label">Full Name *</label>
                         <input type="text" id="assistant-name" class="form-input" required placeholder="John Doe">
                     </div>
-
                     <div class="form-group">
                         <label class="form-label">Email *</label>
                         <input type="email" id="assistant-email" class="form-input" required
                             placeholder="john@example.com">
                     </div>
-
                     <div class="form-group" id="password-group">
                         <label class="form-label">Password *</label>
                         <input type="password" id="assistant-password" class="form-input" required
                             placeholder="••••••••">
                         <small style="color: var(--text-secondary);">Minimum 6 characters</small>
                     </div>
-
                     <div class="form-group">
                         <label class="form-label">Role *</label>
                         <select id="assistant-role" class="form-select" required>
@@ -196,6 +189,37 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" id="cancel-delete-btn">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirm-delete-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Change Modal -->
+    <div class="modal-overlay" id="password-modal">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Change Password</h3>
+                <button class="modal-close" id="close-password-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Change password for "<strong id="password-assistant-name"></strong>"</p>
+                <form id="password-form">
+                    <input type="hidden" id="password-assistant-id">
+                    <div class="form-group">
+                        <label class="form-label">New Password *</label>
+                        <input type="password" id="new-password" class="form-input" required placeholder="••••••••"
+                            minlength="6">
+                        <small style="color: var(--text-secondary);">Minimum 6 characters</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password *</label>
+                        <input type="password" id="confirm-password" class="form-input" required placeholder="••••••••"
+                            minlength="6">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="cancel-password-btn">Cancel</button>
+                <button type="submit" form="password-form" class="btn btn-primary">Change Password</button>
             </div>
         </div>
     </div>

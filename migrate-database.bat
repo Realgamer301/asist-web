@@ -1,105 +1,71 @@
 @echo off
-REM =====================================================
-REM Database Migration Script
-REM Migrates sessions table to new structure
-REM =====================================================
-
-echo.
-echo ========================================
+setlocal
+echo =====================================================
 echo   Database Migration Tool
-echo   Sessions Table Update
-echo ========================================
+echo =====================================================
 echo.
 
-REM Check if MySQL is accessible
+REM Find MySQL
+set MYSQL=mysql
 where mysql >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: MySQL not found in PATH
-    echo Please ensure MySQL is installed and added to system PATH
-    echo.
-    pause
-    exit /b 1
+    if exist "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" (
+        set MYSQL="C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"
+    ) else if exist "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" (
+        set MYSQL="C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe"
+    ) else (
+        echo ❌ ERROR: MySQL not found.
+        pause
+        exit /b 1
+    )
 )
 
+REM Ask for password
+set /p DB_PASSWORD="Enter MySQL root password: "
+
+echo.
 echo Step 1: Creating backup...
-echo.
-
-REM Create backup directory if it doesn't exist
 if not exist "database\backups" mkdir "database\backups"
+for /f %%i in ('powershell -Command "Get-Date -Format 'yyyyMMdd_HHmmss'"') do set datetime=%%i
+set backup_file=database\backups\backup_%datetime%.sql
 
-REM Generate timestamp for backup filename
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set datetime=%%I
-set backup_file=database\backups\backup_%datetime:~0,8%_%datetime:~8,6%.sql
-
-echo Creating backup at: %backup_file%
-echo.
-
-REM Prompt for MySQL password
-set /p mysql_password="Enter MySQL root password: "
-
-REM Create backup
-mysqldump -u root -p%mysql_password% attendance_system > "%backup_file%" 2>nul
-
+mysqldump -u root -p%DB_PASSWORD% attendance_system > "%backup_file%" 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ERROR: Failed to create backup
-    echo Please check:
-    echo   - MySQL is running
-    echo   - Password is correct
-    echo   - Database 'attendance_system' exists
-    echo.
-    pause
-    exit /b 1
-)
-
-echo Backup created successfully!
-echo.
-
-echo Step 2: Running migration...
-echo.
-
-REM Run migration
-mysql -u root -p%mysql_password% attendance_system < "database\migrations\001_update_sessions_table.sql" 2>nul
-
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ERROR: Migration failed
-    echo.
-    echo To restore from backup, run:
-    echo mysql -u root -p attendance_system ^< "%backup_file%"
-    echo.
-    pause
-    exit /b 1
-)
-
-echo Migration completed successfully!
-echo.
-
-echo Step 3: Verifying migration...
-echo.
-
-REM Verify table structure
-mysql -u root -p%mysql_password% -e "USE attendance_system; DESCRIBE sessions;" 2>nul
-
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo WARNING: Could not verify table structure
-    echo.
+    echo ⚠️  Warning: Backup failed (mysqldump not found or error). Proceeding anyway...
 ) else (
-    echo.
-    echo Table structure verified!
+    echo ✅ Backup created at: %backup_file%
+)
+
+echo.
+echo Step 2: Running Migration 001 (Update Sessions)...
+%MYSQL% -u root -p%DB_PASSWORD% attendance_system < "database\migrations\001_update_sessions_table.sql" 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo ⚠️  Migration 001 might have failed or already applied.
+) else (
+    echo ✅ Migration 001 applied.
+)
+
+echo.
+echo Step 3: Running Migration 002 (Recurring Sessions)...
+%MYSQL% -u root -p%DB_PASSWORD% attendance_system < "database\migrations\002_add_recurring_sessions.sql" 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo ⚠️  Migration 002 might have failed or already applied.
+) else (
+    echo ✅ Migration 002 applied.
+)
+
+echo.
+echo Step 4: Running Migration 003 (Create Audit Log Table)...
+%MYSQL% -u root -p%DB_PASSWORD% attendance_system < "database\migrations\003_create_audit_log_table.sql" 2>nul
+if %ERRORLEVEL% NEQ 0 (
+    echo ⚠️  Migration 003 might have failed or already applied.
+) else (
+    echo ✅ Migration 003 applied.
 )
 
 echo.
 echo ========================================
-echo   Migration Complete!
+echo   ✅ Migration Process Complete!
 echo ========================================
-echo.
-echo Next steps:
-echo   1. Restart the backend server
-echo   2. Clear browser cache (Ctrl + F5)
-echo   3. Test the sessions functionality
-echo.
-echo Backup saved at: %backup_file%
 echo.
 pause

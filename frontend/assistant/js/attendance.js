@@ -1,6 +1,6 @@
 // Check authentication
 if (!window.api.isAuthenticated()) {
-    window.location.href = 'index.html';
+    window.location.href = '/assistant/index.html';
 }
 
 // Get session ID from URL
@@ -8,7 +8,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const sessionId = urlParams.get('session');
 
 if (!sessionId) {
-    window.location.href = 'sessions.html';
+    window.location.href = '/assistant/sessions.html';
 }
 
 const loadingSpinner = document.getElementById('loading-spinner');
@@ -100,7 +100,7 @@ async function loadSessionDetails() {
     } catch (error) {
         showAlert(error.message || 'Failed to load session details');
         setTimeout(() => {
-            window.location.href = 'sessions.html';
+            window.location.href = '/assistant/sessions.html';
         }, 2000);
     } finally {
         loadingSpinner.style.display = 'none';
@@ -176,7 +176,7 @@ confirmBtn.addEventListener('click', async () => {
 
             // Redirect back to sessions after 2 seconds
             setTimeout(() => {
-                window.location.href = 'sessions.html';
+                window.location.href = '/assistant/sessions.html';
             }, 2000);
         }
 

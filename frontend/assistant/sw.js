@@ -1,16 +1,16 @@
 const CACHE_NAME = 'attendance-pwa-v1';
 const urlsToCache = [
-    '/frontend/assistant/',
-    '/frontend/assistant/index.html',
-    '/frontend/assistant/sessions.html',
-    '/frontend/assistant/attendance.html',
-    '/frontend/assistant/css/style.css',
-    '/frontend/assistant/js/auth.js',
-    '/frontend/assistant/js/sessions.js',
-    '/frontend/assistant/js/gps.js',
-    '/frontend/assistant/js/attendance.js',
-    '/frontend/shared/css/common.css',
-    '/frontend/shared/js/api.js'
+    '/assistant/',
+    '/assistant/index.html',
+    '/assistant/sessions.html',
+    '/assistant/attendance.html',
+    '/assistant/css/style.css',
+    '/assistant/js/auth.js',
+    '/assistant/js/sessions.js',
+    '/assistant/js/gps.js',
+    '/assistant/js/attendance.js',
+    '/shared/css/common.css',
+    '/shared/js/api.js'
 ];
 
 // Install event - cache files

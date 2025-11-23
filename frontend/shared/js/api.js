@@ -1,5 +1,5 @@
 // API Base URL
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = '/api';
 
 /**
  * Get authentication token from localStorage
@@ -73,7 +73,11 @@ async function makeRequest(method, endpoint, data = null) {
             // Handle unauthorized (expired token)
             if (response.status === 401 || response.status === 403) {
                 removeToken();
-                window.location.href = '/frontend/assistant/index.html';
+                if (window.location.pathname.includes('/admin')) {
+                    window.location.href = '/admin/index.html';
+                } else {
+                    window.location.href = '/assistant/index.html';
+                }
             }
 
             throw new Error(result.message || 'Request failed');
@@ -98,7 +102,11 @@ function isAuthenticated() {
  */
 function logout() {
     removeToken();
-    window.location.href = '/frontend/assistant/index.html';
+    if (window.location.pathname.includes('/admin')) {
+        window.location.href = '/admin/index.html';
+    } else {
+        window.location.href = '/assistant/index.html';
+    }
 }
 
 // Make functions globally available

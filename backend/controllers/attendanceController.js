@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const { calculateDistance } = require('../utils/haversine');
+const { logAuditAction } = require('../utils/auditLogger');
 
 /**
  * Record attendance with GPS validation
@@ -25,8 +26,8 @@ const recordAttendance = async (req, res) => {
         s.assistant_id,
         s.center_id,
         s.subject,
-        s.date,
-        s.start_time,
+        CURDATE() as date,
+        TIME(s.start_time) as start_time,
         c.latitude as center_lat,
         c.longitude as center_lng,
         c.radius_m,
@@ -46,8 +47,8 @@ const recordAttendance = async (req, res) => {
 
         const session = sessions[0];
 
-        // Verify session belongs to assistant
-        if (session.assistant_id !== assistantId) {
+        // Verify session belongs to assistant (if assigned)
+        if (session.assistant_id && session.assistant_id !== assistantId) {
             return res.status(403).json({
                 success: false,
                 message: 'This session is not assigned to you'
@@ -89,7 +90,7 @@ const recordAttendance = async (req, res) => {
 
         // Calculate delay
         const now = new Date();
-        const sessionDate = new Date(session.date);
+        const sessionDate = new Date(); // Use today
         const [hours, minutes] = session.start_time.split(':');
         sessionDate.setHours(parseInt(hours), parseInt(minutes), 0);
 
@@ -108,6 +109,16 @@ const recordAttendance = async (req, res) => {
             hour: '2-digit',
             minute: '2-digit',
             hour12: true
+        });
+
+        // Log the action
+        await logAuditAction(assistantId, 'RECORD_ATTENDANCE', {
+            attendance_id: result.insertId,
+            session_id,
+            center_id: session.center_id,
+            subject: session.subject,
+            delay_minutes: delayMinutes,
+            distance: Math.round(distance)
         });
 
         res.json({
@@ -146,9 +157,9 @@ const getMyAttendance = async (req, res) => {
         a.time_recorded,
         a.delay_minutes,
         s.subject,
-        s.date,
-        s.start_time,
-        s.end_time,
+        DATE(s.start_time) as date,
+        TIME(s.start_time) as start_time,
+        ADDTIME(TIME(s.start_time), '02:00:00') as end_time,
         c.name as center_name
       FROM attendance a
       JOIN sessions s ON a.session_id = s.id

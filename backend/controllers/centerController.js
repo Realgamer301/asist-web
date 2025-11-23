@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { logAuditAction } = require('../utils/auditLogger');
 
 /**
  * Get all centers
@@ -42,6 +43,16 @@ const createCenter = async (req, res) => {
             'INSERT INTO centers (name, latitude, longitude, radius_m, address) VALUES (?, ?, ?, ?, ?)',
             [name, latitude, longitude, radius_m, address]
         );
+
+        // Log the action
+        await logAuditAction(req.user.id, 'CREATE_CENTER', {
+            center_id: result.insertId,
+            name,
+            latitude,
+            longitude,
+            radius_m,
+            address
+        });
 
         res.status(201).json({
             success: true,
@@ -90,6 +101,16 @@ const updateCenter = async (req, res) => {
                 message: 'Center not found'
             });
         }
+
+        // Log the action
+        await logAuditAction(req.user.id, 'UPDATE_CENTER', {
+            center_id: id,
+            name,
+            latitude,
+            longitude,
+            radius_m,
+            address
+        });
 
         res.json({
             success: true,
@@ -153,6 +174,11 @@ const deleteCenter = async (req, res) => {
                 message: 'Center not found'
             });
         }
+
+        // Log the action
+        await logAuditAction(req.user.id, 'DELETE_CENTER', {
+            center_id: id
+        });
 
         res.json({
             success: true,

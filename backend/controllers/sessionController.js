@@ -12,22 +12,30 @@ const getTodaySessions = async (req, res) => {
             `SELECT 
         s.id,
         s.subject,
-        s.date,
-        s.start_time,
-        s.end_time,
+        CURDATE() as date,
+        TIME(s.start_time) as start_time,
+        ADDTIME(TIME(s.start_time), '02:00:00') as end_time,
         c.id as center_id,
         c.name as center_name,
         c.latitude,
         c.longitude,
         c.radius_m,
-        a.id as attendance_id
+        a.id as attendance_id,
+        s.recurrence_type
       FROM sessions s
       JOIN centers c ON s.center_id = c.id
       LEFT JOIN attendance a ON a.session_id = s.id AND a.assistant_id = ?
-      WHERE s.assistant_id = ? AND s.date = CURDATE()
-      ORDER BY s.start_time`,
+      WHERE 
+        (s.assistant_id = ? OR s.assistant_id IS NULL)
+        AND (
+          (s.recurrence_type = 'one_time' AND DATE(s.start_time) = CURDATE())
+          OR 
+          (s.recurrence_type = 'weekly' AND s.day_of_week = WEEKDAY(CURDATE()) + 1 AND s.is_active = TRUE)
+        )
+      ORDER BY TIME(s.start_time)`,
             [assistantId, assistantId]
         );
+
 
         res.json({
             success: true,
@@ -59,9 +67,9 @@ const getSessionById = async (req, res) => {
             `SELECT 
         s.id,
         s.subject,
-        s.date,
-        s.start_time,
-        s.end_time,
+        CURDATE() as date,
+        TIME(s.start_time) as start_time,
+        ADDTIME(TIME(s.start_time), '02:00:00') as end_time,
         c.id as center_id,
         c.name as center_name,
         c.latitude,
@@ -69,7 +77,7 @@ const getSessionById = async (req, res) => {
         c.radius_m
       FROM sessions s
       JOIN centers c ON s.center_id = c.id
-      WHERE s.id = ? AND s.assistant_id = ?`,
+      WHERE s.id = ? AND (s.assistant_id = ? OR s.assistant_id IS NULL)`,
             [id, assistantId]
         );
 

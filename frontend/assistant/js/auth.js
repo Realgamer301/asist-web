@@ -1,6 +1,6 @@
 // Check if already logged in
 if (window.api.isAuthenticated()) {
-    window.location.href = 'sessions.html';
+    window.location.href = '/assistant/sessions.html';
 }
 
 const loginForm = document.getElementById('login-form');
@@ -49,7 +49,7 @@ loginForm.addEventListener('submit', async (e) => {
             window.api.saveUser(response.data.user);
 
             // Redirect to sessions page
-            window.location.href = 'sessions.html';
+            window.location.href = '/assistant/sessions.html';
         }
     } catch (error) {
         showAlert(error.message || 'Login failed. Please check your credentials.');

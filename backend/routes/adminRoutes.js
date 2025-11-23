@@ -16,7 +16,9 @@ const {
     getUserById,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    changeUserPassword,
+    getAuditLogs
 } = require('../controllers/adminController');
 const authenticateToken = require('../middleware/authMiddleware');
 const checkRole = require('../middleware/roleMiddleware');
@@ -39,6 +41,7 @@ router.get('/users', getAllUsers);
 router.get('/users/:id', getUserById);
 router.post('/users', createUser);
 router.put('/users/:id', updateUser);
+router.put('/users/:id/password', changeUserPassword);  // Password change endpoint
 router.delete('/users/:id', deleteUser);
 
 // Sessions management
@@ -50,5 +53,8 @@ router.delete('/sessions/:id', deleteSession);
 
 // Attendance records
 router.get('/attendance', getAttendanceRecords);
+
+// Audit logs
+router.get('/audit-logs', getAuditLogs);
 
 module.exports = router;

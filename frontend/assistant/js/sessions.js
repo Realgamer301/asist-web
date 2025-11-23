@@ -1,6 +1,6 @@
 // Check authentication
 if (!window.api.isAuthenticated()) {
-    window.location.href = 'index.html';
+  window.location.href = '/assistant/index.html';
 }
 
 const user = window.api.getUser();
@@ -14,7 +14,7 @@ const alertContainer = document.getElementById('alert-container');
 
 // Display user name
 if (user) {
-    userNameEl.textContent = user.name;
+  userNameEl.textContent = user.name;
 }
 
 // Display current date
@@ -23,41 +23,41 @@ currentDateEl.textContent = new Date().toLocaleDateString('en-US', options);
 
 // Logout handler
 logoutBtn.addEventListener('click', () => {
-    window.api.logout();
+  window.api.logout();
 });
 
 // Show alert
 function showAlert(message, type = 'error') {
-    const alertClass = type === 'error' ? 'alert-error' : type === 'success' ? 'alert-success' : 'alert-warning';
-    alertContainer.innerHTML = `
+  const alertClass = type === 'error' ? 'alert-error' : type === 'success' ? 'alert-success' : 'alert-warning';
+  alertContainer.innerHTML = `
     <div class="alert ${alertClass}">
       ${message}
     </div>
   `;
 
-    // Auto hide after 5 seconds
-    setTimeout(() => {
-        alertContainer.innerHTML = '';
-    }, 5000);
+  // Auto hide after 5 seconds
+  setTimeout(() => {
+    alertContainer.innerHTML = '';
+  }, 5000);
 }
 
 // Format time for display
 function formatTime(timeString) {
-    const [hours, minutes] = timeString.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
+  const [hours, minutes] = timeString.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minutes} ${ampm}`;
 }
 
 // Render session card
 function renderSessionCard(session) {
-    const isAttended = session.attended;
-    const badgeClass = isAttended ? 'badge-attended' : 'badge-pending';
-    const badgeText = isAttended ? 'Attended' : 'Pending';
-    const cardClass = isAttended ? 'session-card attended' : 'session-card';
+  const isAttended = session.attended;
+  const badgeClass = isAttended ? 'badge-attended' : 'badge-pending';
+  const badgeText = isAttended ? 'Attended' : 'Pending';
+  const cardClass = isAttended ? 'session-card attended' : 'session-card';
 
-    return `
+  return `
     <div class="${cardClass}">
       <div class="session-header">
         <h3 class="session-subject">${session.subject}</h3>
@@ -83,39 +83,39 @@ function renderSessionCard(session) {
       </div>
       
       ${isAttended
-            ? '<button class="btn btn-secondary" disabled>✓ Attendance Recorded</button>'
-            : `<button class="btn btn-primary" onclick="goToAttendance(${session.id})">Mark Attendance</button>`
-        }
+      ? '<button class="btn btn-secondary" disabled>✓ Attendance Recorded</button>'
+      : `<button class="btn btn-primary" onclick="goToAttendance(${session.id})">Mark Attendance</button>`
+    }
     </div>
   `;
 }
 
 // Navigate to attendance page
 window.goToAttendance = function (sessionId) {
-    window.location.href = `attendance.html?session=${sessionId}`;
+  window.location.href = `/assistant/attendance.html?session=${sessionId}`;
 };
 
 // Load today's sessions
 async function loadSessions() {
-    try {
-        loadingSpinner.style.display = 'block';
-        sessionsContainer.style.display = 'none';
-        emptyState.style.display = 'none';
+  try {
+    loadingSpinner.style.display = 'block';
+    sessionsContainer.style.display = 'none';
+    emptyState.style.display = 'none';
 
-        const response = await window.api.makeRequest('GET', '/sessions/today');
+    const response = await window.api.makeRequest('GET', '/sessions/today');
 
-        if (response.success && response.data.length > 0) {
-            sessionsContainer.innerHTML = response.data.map(renderSessionCard).join('');
-            sessionsContainer.style.display = 'grid';
-        } else {
-            emptyState.style.display = 'block';
-        }
-
-    } catch (error) {
-        showAlert(error.message || 'Failed to load sessions');
-    } finally {
-        loadingSpinner.style.display = 'none';
+    if (response.success && response.data.length > 0) {
+      sessionsContainer.innerHTML = response.data.map(renderSessionCard).join('');
+      sessionsContainer.style.display = 'grid';
+    } else {
+      emptyState.style.display = 'block';
     }
+
+  } catch (error) {
+    showAlert(error.message || 'Failed to load sessions');
+  } finally {
+    loadingSpinner.style.display = 'none';
+  }
 }
 
 // Load sessions on page load

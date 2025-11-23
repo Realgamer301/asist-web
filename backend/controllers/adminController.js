@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const bcrypt = require('bcryptjs');
+const { logAuditAction } = require('../utils/auditLogger');
 
 /**
  * Get dashboard statistics
@@ -135,6 +136,14 @@ const createAssistant = async (req, res) => {
             );
         }
 
+        // Log the action
+        await logAuditAction(req.user.id, 'CREATE_ASSISTANT', {
+            assistant_id: assistantId,
+            name,
+            email,
+            center_ids
+        });
+
         res.status(201).json({
             success: true,
             message: 'Assistant created successfully',
@@ -181,6 +190,14 @@ const updateAssistant = async (req, res) => {
             }
         }
 
+        // Log the action
+        await logAuditAction(req.user.id, 'UPDATE_ASSISTANT', {
+            assistant_id: id,
+            name,
+            email,
+            center_ids
+        });
+
         res.json({
             success: true,
             message: 'Assistant updated successfully'
@@ -213,6 +230,11 @@ const deleteAssistant = async (req, res) => {
                 message: 'Assistant not found'
             });
         }
+
+        // Log the action
+        await logAuditAction(req.user.id, 'DELETE_ASSISTANT', {
+            assistant_id: id
+        });
 
         res.json({
             success: true,
@@ -362,6 +384,17 @@ const createSession = async (req, res) => {
             [assistant_id, center_id, subject, start_time, recurrence_type, day_of_week]
         );
 
+        // Log the action
+        await logAuditAction(req.user.id, 'CREATE_SESSION', {
+            session_id: result.insertId,
+            assistant_id,
+            center_id,
+            subject,
+            start_time,
+            recurrence_type,
+            day_of_week
+        });
+
         res.status(201).json({
             success: true,
             message: 'Session created successfully',
@@ -413,6 +446,18 @@ const updateSession = async (req, res) => {
             });
         }
 
+        // Log the action
+        await logAuditAction(req.user.id, 'UPDATE_SESSION', {
+            session_id: id,
+            assistant_id,
+            center_id,
+            subject,
+            start_time,
+            recurrence_type,
+            day_of_week,
+            is_active
+        });
+
         res.json({
             success: true,
             message: 'Session updated successfully'
@@ -443,6 +488,11 @@ const deleteSession = async (req, res) => {
             });
         }
 
+        // Log the action
+        await logAuditAction(req.user.id, 'DELETE_SESSION', {
+            session_id: id
+        });
+
         res.json({
             success: true,
             message: 'Session deleted successfully'
@@ -467,7 +517,7 @@ const getAttendanceRecords = async (req, res) => {
         let query = `
       SELECT a.id, a.time_recorded, a.delay_minutes,
              u.name as assistant_name, c.name as center_name,
-             s.subject, s.date, s.start_time,
+             s.subject, s.start_time,
              a.latitude, a.longitude
       FROM attendance a
       JOIN users u ON a.assistant_id = u.id
@@ -609,6 +659,14 @@ const createUser = async (req, res) => {
             [name, email, passwordHash, role]
         );
 
+        // Log the action
+        await logAuditAction(req.user.id, 'CREATE_USER', {
+            user_id: result.insertId,
+            name,
+            email,
+            role
+        });
+
         res.status(201).json({
             success: true,
             message: 'User created successfully',
@@ -630,16 +688,42 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, role } = req.body;
+        const { name, email, role, password } = req.body;
 
-        const [result] = await db.query(
-            `UPDATE users 
-       SET name = COALESCE(?, name),
-           email = COALESCE(?, email),
-           role = COALESCE(?, role)
-       WHERE id = ?`,
-            [name, email, role, id]
-        );
+        // Build update query dynamically
+        const updates = [];
+        const params = [];
+
+        if (name) {
+            updates.push('name = ?');
+            params.push(name);
+        }
+        if (email) {
+            updates.push('email = ?');
+            params.push(email);
+        }
+        if (role) {
+            updates.push('role = ?');
+            params.push(role);
+        }
+        if (password) {
+            // Hash the new password
+            const passwordHash = await bcrypt.hash(password, 10);
+            updates.push('password_hash = ?');
+            params.push(passwordHash);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No fields to update'
+            });
+        }
+
+        params.push(id);
+        const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
+
+        const [result] = await db.query(query, params);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({
@@ -647,6 +731,14 @@ const updateUser = async (req, res) => {
                 message: 'User not found'
             });
         }
+
+        // Log the action
+        await logAuditAction(req.user.id, 'UPDATE_USER', {
+            user_id: id,
+            name,
+            email,
+            role
+        });
 
         res.json({
             success: true,
@@ -678,6 +770,11 @@ const deleteUser = async (req, res) => {
             });
         }
 
+        // Log the action
+        await logAuditAction(req.user.id, 'DELETE_USER', {
+            user_id: id
+        });
+
         res.json({
             success: true,
             message: 'User deleted successfully'
@@ -687,6 +784,111 @@ const deleteUser = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error deleting user'
+        });
+    }
+};
+
+/**
+ * Change user password (admin only)
+ * PUT /api/admin/users/:id/password
+ */
+const changeUserPassword = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { password } = req.body;
+
+        if (!password || password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 6 characters long'
+            });
+        }
+
+        // Hash the new password
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        const [result] = await db.query(
+            'UPDATE users SET password_hash = ? WHERE id = ?',
+            [passwordHash, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Log the action
+        await logAuditAction(req.user.id, 'CHANGE_USER_PASSWORD', {
+            user_id: id
+        });
+
+        res.json({
+            success: true,
+            message: 'Password changed successfully'
+        });
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error changing password'
+        });
+    }
+};
+
+/**
+ * Get audit logs with filters
+ * GET /api/admin/audit-logs
+ */
+const getAuditLogs = async (req, res) => {
+    try {
+        const { start_date, end_date, user_id, action, limit = 100 } = req.query;
+
+        let query = `
+            SELECT al.id, al.action, al.details, al.created_at,
+                   u.name as user_name, u.email as user_email
+            FROM audit_log al
+            LEFT JOIN users u ON al.user_id = u.id
+            WHERE 1=1
+        `;
+
+        const params = [];
+
+        if (start_date) {
+            query += ' AND DATE(al.created_at) >= ?';
+            params.push(start_date);
+        }
+
+        if (end_date) {
+            query += ' AND DATE(al.created_at) <= ?';
+            params.push(end_date);
+        }
+
+        if (user_id) {
+            query += ' AND al.user_id = ?';
+            params.push(user_id);
+        }
+
+        if (action) {
+            query += ' AND al.action LIKE ?';
+            params.push(`%${action}%`);
+        }
+
+        query += ' ORDER BY al.created_at DESC LIMIT ?';
+        params.push(parseInt(limit));
+
+        const [logs] = await db.query(query, params);
+
+        res.json({
+            success: true,
+            data: logs
+        });
+    } catch (error) {
+        console.error('Get audit logs error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching audit logs'
         });
     }
 };
@@ -707,5 +909,7 @@ module.exports = {
     getUserById,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    changeUserPassword,
+    getAuditLogs
 };

@@ -77,6 +77,12 @@ function displayAssistants(assistants) {
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
                         </button>
+                        <button class="btn-icon password-btn" data-id="${assistant.id}" data-name="${assistant.name}" title="Change Password" style="color: var(--accent-blue);">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </button>
                         <button class="btn-icon delete-btn" data-id="${assistant.id}" title="Delete">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M3 6h18"></path>
@@ -93,6 +99,13 @@ function displayAssistants(assistants) {
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', () => editAssistant(btn.dataset.id));
     });
+
+    // Only attach password button handlers if the modal exists
+    if (window.openPasswordModal) {
+        document.querySelectorAll('.password-btn').forEach(btn => {
+            btn.addEventListener('click', () => window.openPasswordModal(btn.dataset.id, btn.dataset.name));
+        });
+    }
 
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', () => openDeleteModal(btn.dataset.id));
@@ -241,6 +254,80 @@ assistantModal.addEventListener('click', (e) => {
 deleteModal.addEventListener('click', (e) => {
     if (e.target === deleteModal) closeDeleteModal();
 });
+
+// ===================================================================
+// PASSWORD CHANGE MODAL
+// ===================================================================
+
+const passwordModal = document.getElementById('password-modal');
+
+// Only initialize password modal if it exists in the HTML
+if (passwordModal) {
+    let currentPasswordAssistantId = null;
+
+    function openPasswordModal(id, name) {
+        currentPasswordAssistantId = id;
+        document.getElementById('password-assistant-id').value = id;
+        document.getElementById('password-assistant-name').textContent = name;
+        document.getElementById('password-form').reset();
+        passwordModal.classList.add('active');
+    }
+
+    function closePasswordModal() {
+        passwordModal.classList.remove('active');
+        currentPasswordAssistantId = null;
+        document.getElementById('password-form').reset();
+    }
+
+    // Password form submit
+    document.getElementById('password-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+
+        // Validate passwords match
+        if (newPassword !== confirmPassword) {
+            showAlert('Passwords do not match', 'error');
+            return;
+        }
+
+        // Validate password length
+        if (newPassword.length < 6) {
+            showAlert('Password must be at least 6 characters long', 'error');
+            return;
+        }
+
+        try {
+            const response = await window.api.makeRequest(
+                'PUT',
+                `/admin/users/${currentPasswordAssistantId}/password`,
+                { password: newPassword }
+            );
+
+            if (response.success) {
+                showAlert('Password changed successfully');
+                closePasswordModal();
+            } else {
+                showAlert(response.message || 'Failed to change password', 'error');
+            }
+        } catch (error) {
+            console.error('Error changing password:', error);
+            showAlert('Failed to change password', 'error');
+        }
+    });
+
+    // Password modal event listeners
+    document.getElementById('close-password-modal').addEventListener('click', closePasswordModal);
+    document.getElementById('cancel-password-btn').addEventListener('click', closePasswordModal);
+
+    passwordModal.addEventListener('click', (e) => {
+        if (e.target === passwordModal) closePasswordModal();
+    });
+
+    // Make openPasswordModal available globally
+    window.openPasswordModal = openPasswordModal;
+}
 
 // Initialize
 loadAssistants();

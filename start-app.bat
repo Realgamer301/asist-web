@@ -41,6 +41,14 @@ if not exist "backend\.env" (
     exit /b 1
 )
 
+REM Check if SSL certificates exist
+if not exist "backend\key.pem" (
+    echo 🔒 Generating SSL certificates...
+    cd /d "%~dp0backend"
+    call node generate-certs.js
+    cd /d "%~dp0"
+)
+
 echo ========================================================
 echo   Starting Server (Port 5000)...
 echo ========================================================
@@ -57,9 +65,9 @@ echo ========================================================
 echo   ✅ Attendance System Started Successfully!
 echo ========================================================
 echo.
-echo 📱 Assistant PWA:     http://localhost:5000/assistant/
-echo 🔐 Admin Dashboard:   http://localhost:5000/admin/
-echo 🔧 Backend API:       http://localhost:5000/api
+echo 📱 Assistant PWA:     https://localhost:5000/assistant/
+echo 🔐 Admin Dashboard:   https://localhost:5000/admin/
+echo 🔧 Backend API:       https://localhost:5000/api
 echo.
 echo ========================================================
 echo   Test Credentials
@@ -84,7 +92,7 @@ echo Opening admin dashboard in your browser...
 timeout /t 2 /nobreak >nul
 
 REM Open browser to admin login page
-start http://localhost:5000/admin/
+start https://localhost:5000/admin/
 
 echo.
 echo ✅ Server is running!
