@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "framework": "express",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "public": true,
+  "env": {
+    "DB_HOST": "@db_host",
+    "DB_USER": "@db_user",
+    "DB_PASSWORD": "@db_password",
+    "DB_NAME": "@db_name",
+    "DB_PORT": "@db_port",
+    "JWT_SECRET": "@jwt_secret",
+    "NODE_ENV": "production"
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/assistant/(.*)",
+      "destination": "/assistant/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/admin/index.html"
+    }
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "memory": 256,
+      "maxDuration": 60
+    }
+  }
+}

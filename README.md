@@ -261,7 +261,30 @@ Common issues:
 
 ---
 
-## 📄 License
+## � Deployment Options
+
+### Local Development
+- **Hostinger**: See [HOSTINGER_SETUP.md](HOSTINGER_SETUP.md)
+- **Windows Local**: Use `start-app.bat` after setup
+
+### Cloud Deployment (Recommended)
+- **Vercel** (Serverless): See [VERCEL_SETUP.md](VERCEL_SETUP.md) ⭐ **Recommended**
+
+#### Quick Vercel Deploy
+```bash
+# 1. Push to GitHub
+git push origin main
+
+# 2. Import in Vercel
+# Visit https://vercel.com/import
+# Select your repository
+# Add environment variables
+# Deploy!
+```
+
+---
+
+## �📄 License
 
 This project is licensed under the MIT License.
 
@@ -269,14 +292,25 @@ This project is licensed under the MIT License.
 
 ## 🎓 Next Steps
 
+### For Local Development
 1. ✅ Run `setup-database.bat` to create the database
 2. ✅ Edit `backend\.env` with your MySQL password
 3. ✅ Run `start-app.bat` to start the application
 4. ✅ Login with test credentials
 5. ✅ Explore the system!
 
-**For detailed instructions, see [docs/BATCH_SCRIPTS_GUIDE.md](docs/BATCH_SCRIPTS_GUIDE.md)**
+### For Vercel Deployment
+1. ✅ Push code to GitHub
+2. ✅ Follow [VERCEL_SETUP.md](VERCEL_SETUP.md)
+3. ✅ Set up database (PlanetScale, Azure, or AWS)
+4. ✅ Configure environment variables
+5. ✅ Deploy and monitor
+
+**For detailed instructions:**
+- Local: [HOSTINGER_SETUP.md](HOSTINGER_SETUP.md) (also works for local setup concepts)
+- Cloud: [VERCEL_SETUP.md](VERCEL_SETUP.md)
 
 ---
 
 **Built with ❤️ using HTML, CSS, JavaScript, Node.js, Express, MySQL, and OpenStreetMap**
+
